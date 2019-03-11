@@ -17,7 +17,13 @@ Page({
     })
   },
   onLoad: function() {
-
+    let that = this
+    let vision = wx.getStorageSync("vision")
+    if(vision == null || vision != app.globalData.vision){
+      console.log(vision + "    " + app.globalData.vision)
+      wx.setStorageSync("vision", app.globalData.vision)
+      that.onPullDownRefresh()
+    }
   },
   onShow: function() {
     var that = this;
@@ -53,12 +59,16 @@ Page({
       that.getCourse()
     }
   },
+  onPullDownRefresh: function () {
+    let that = this;
+    that.getCourse();
+    wx.stopPullDownRefresh()
+  },
+
   login: function() {
     try {
       const username = wx.getStorageSync('username');
       const password = wx.getStorageSync("password");
-      console.log(username)
-      console.log(password)
       if (username != "" && password != "") {
         // Do something with return value
         wx.showToast({
@@ -84,7 +94,7 @@ Page({
             if (res.data.success == "1") {
               wx.showToast({
                 title: '成功',
-                duration: 2000
+                duration: 1000
               });
               wx.setStorageSync("cookie", res.data.cookie);
               wx.switchTab({
@@ -107,15 +117,19 @@ Page({
           }
         })
       } else {
-        wx.redirectTo({
-          url: '../login/login',
-        })
+        
       }
     } catch (e) {
       // Do something when catch error
-      wx.navigateTo({
-        url: '../login/login',
-      })
+      wx.showModal({
+        content: '请登录！',
+        showCancel: false,
+        success: function (res) {
+          if (res.confirm) {
+            console.log('用户点击确定')
+          }
+        }
+      });
     }
   },
   getCourse: function() {
@@ -153,16 +167,22 @@ Page({
         }
       })
     } else {
-      wx.switchTab({
-        url: '../me/me',
-      })
+      wx.showModal({
+        content: '请登录！',
+        showCancel: false,
+        success: function (res) {
+          if (res.confirm) {
+            console.log('用户点击确定')
+          }
+        }
+      });
     }
   },
   setDay: function() {
     var that = this;
     let start_date = wx.getStorageSync("start_date")
     start_date = new Date(start_date)
-    console.log(wx.getStorageSync("start_date").substring(1, wx.getStorageSync("start_date").length - 1).replace(/\-/g, '/') + " 00:00:00")
+    console.log(wx.getStorageSync("start_date"))
     console.log("start_date:"+start_date)
     var current_date = new Date();
     console.log("current_date:" + current_date)
@@ -186,9 +206,9 @@ Page({
         index: 0,
       })
     }
-    if (day < 0) {
+    if (days < 0) {
       that.setData({
-        today: -1
+        today: -2
       })
     } else {
       that.setData({
@@ -196,5 +216,19 @@ Page({
       })
     }
     console.log("今天是：" + that.data.today)
-  }
+  },
+  /**
+   * @Doc 渲染课表详情页
+   */
+  showCardView: function (e) {
+    let that = this;
+    const i = parseInt(e.currentTarget.dataset.i);
+    const j = parseInt(e.currentTarget.dataset.j);
+    const thiscourse = that.data.course[i][j]
+    wx.showModal({
+      content: thiscourse.name + '\n' + thiscourse.teacher + '\n' + thiscourse.week + '\n' + thiscourse.address,
+      showCancel: false,
+      success: res => console.log('用户点击确定:', res.confirm)
+    });
+  },
 })
